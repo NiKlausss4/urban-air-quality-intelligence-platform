@@ -2,6 +2,8 @@
 
 An end-to-end, real-data ETL and analytics project for air quality and weather. The xKDR India Air Quality API supplies CPCB and US Embassy monitoring observations; Open-Meteo supplies gridded historical weather context. No bundled or fabricated readings are used.
 
+Live application: https://urban-air-quality-dashboard.onrender.com 
+
 ## Architecture
 
 ```mermaid
