@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import tempfile
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -10,24 +11,65 @@ st.set_page_config(page_title="Urban Air Quality Intelligence", page_icon="ðŸŒ«ï
 st.title("Urban Air Quality Intelligence")
 st.caption("Observed CPCB and US Embassy measurements via xKDR, with Open-Meteo historical weather context. Correlation does not imply causation.")
 
-if st.button("Refresh data from xKDR", type="primary"):
+if st.session_state.pop("_refresh_succeeded", False):
+    st.success("Data refresh completed. Dashboard data has been reloaded.")
+refresh_error = st.session_state.pop("_refresh_error", None)
+if refresh_error:
+    st.error("Data refresh failed. Details from the pipeline:")
+    st.code(refresh_error)
+
+if st.button("Refresh data from xKDR", type="primary", disabled=(
+    st.session_state.get("_refresh_process") is not None
+    and st.session_state["_refresh_process"].poll() is None
+)):
     if not os.getenv("XKDR_API_KEY"):
         st.error("XKDR_API_KEY is not configured for this service.")
     else:
-        with st.spinner("Refreshing observations and building analytics. This can take several minutes..."):
-            result = subprocess.run(
+        log_file = tempfile.NamedTemporaryFile(prefix="airquality-refresh-", suffix=".log", delete=False)
+        log_path = log_file.name
+        log_file.close()
+        try:
+            process = subprocess.Popen(
                 [sys.executable, "run_render_pipeline.py"],
-                capture_output=True,
+                stdout=open(log_path, "w", encoding="utf-8"),
+                stderr=subprocess.STDOUT,
                 text=True,
-                check=False,
             )
-        if result.returncode == 0:
-            st.success("Data refresh completed.")
+            st.session_state["_refresh_process"] = process
+            st.session_state["_refresh_log_path"] = log_path
+            st.session_state["_refresh_completed"] = False
+        except Exception as exc:
+            st.error(f"Could not start the data refresh: {exc}")
+
+@st.fragment(run_every=3)
+def show_refresh_status():
+    process = st.session_state.get("_refresh_process")
+    if process is None:
+        return
+
+    log_path = st.session_state.get("_refresh_log_path", "")
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as log_file:
+            output = log_file.read()
+    except OSError:
+        output = "Waiting for pipeline output..."
+
+    exit_code = process.poll()
+    if exit_code is None:
+        st.info("Refresh is running in the background. You can leave this page open; progress appears below.")
+        if output.strip():
+            st.code(output[-5000:])
+    elif not st.session_state.get("_refresh_completed", False):
+        st.session_state["_refresh_completed"] = True
+        if exit_code == 0:
+            st.session_state["_refresh_succeeded"] = True
             st.cache_data.clear()
             st.rerun()
         else:
-            st.error("Data refresh failed. Details from the pipeline:")
-            st.code((result.stdout + "\n" + result.stderr).strip()[-8000:])
+            st.session_state["_refresh_error"] = output[-8000:] or f"Pipeline exited with code {exit_code} without writing a log."
+            st.rerun()
+
+show_refresh_status()
 
 @st.cache_data(ttl=120)
 def query(sql):
