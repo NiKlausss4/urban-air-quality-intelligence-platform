@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -7,6 +9,25 @@ from sqlalchemy import create_engine, text
 st.set_page_config(page_title="Urban Air Quality Intelligence", page_icon="🌫️", layout="wide")
 st.title("Urban Air Quality Intelligence")
 st.caption("Observed CPCB and US Embassy measurements via xKDR, with Open-Meteo historical weather context. Correlation does not imply causation.")
+
+if st.button("Refresh data from xKDR", type="primary"):
+    if not os.getenv("XKDR_API_KEY"):
+        st.error("XKDR_API_KEY is not configured for this service.")
+    else:
+        with st.spinner("Refreshing observations and building analytics. This can take several minutes..."):
+            result = subprocess.run(
+                [sys.executable, "run_render_pipeline.py"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        if result.returncode == 0:
+            st.success("Data refresh completed.")
+            st.cache_data.clear()
+            st.rerun()
+        else:
+            st.error("Data refresh failed. Details from the pipeline:")
+            st.code((result.stdout + "\n" + result.stderr).strip()[-8000:])
 
 @st.cache_data(ttl=120)
 def query(sql):

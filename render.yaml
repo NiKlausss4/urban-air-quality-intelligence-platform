@@ -16,17 +16,5 @@ services:
         fromDatabase:
           name: urban-air-quality-db
           property: connectionString
-
-  - type: cron
-    name: urban-air-quality-etl
-    runtime: python
-    schedule: "30 3 * * *"
-    buildCommand: pip install -r requirements-render.txt
-    startCommand: python run_render_pipeline.py
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: urban-air-quality-db
-          property: connectionString
       - key: XKDR_API_KEY
         sync: false
