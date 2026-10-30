@@ -20,7 +20,6 @@ services:
   - type: cron
     name: urban-air-quality-etl
     runtime: python
-    plan: free
     schedule: "30 3 * * *"
     buildCommand: pip install -r requirements-render.txt
     startCommand: python run_render_pipeline.py
