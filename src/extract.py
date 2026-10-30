@@ -28,8 +28,11 @@ def _get(url, *, params=None, headers=None, timeout=30):
             time.sleep(min(2 ** attempt, 8))
 
 def _auth(api_key):
+    api_key = (api_key or "").strip()
     if not api_key:
         raise APIError("XKDR_API_KEY is required; configure it in .env")
+    if "\r" in api_key or "\n" in api_key:
+        raise APIError("XKDR_API_KEY contains an embedded newline; replace it in the deployment settings")
     return {"Authorization": f"Bearer {api_key}"}
 
 def stations(city, api_key):

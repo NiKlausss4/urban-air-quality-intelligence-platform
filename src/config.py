@@ -15,7 +15,7 @@ CITY_COORDINATES = {
 
 def settings():
     return {
-        "api_key": os.getenv("XKDR_API_KEY", ""),
+        "api_key": os.getenv("XKDR_API_KEY", "").strip(),
         "database_url": os.getenv("DATABASE_URL", "postgresql+psycopg2://airquality:airquality@localhost:5432/airquality"),
         "cities": [c.strip() for c in os.getenv("CITIES", "Bengaluru,Delhi,Mumbai").split(",") if c.strip()],
         "lookback_hours": int(os.getenv("LOOKBACK_HOURS", "168")),

@@ -43,7 +43,7 @@ def query(sql):
 try:
     cities = query("select name from dim_city order by name")
     if cities.empty:
-        st.warning("No city data is loaded yet. Configure an xKDR API key and trigger the Airflow DAG or run the ETL command.")
+        st.warning("No city data is loaded yet. Configure XKDR_API_KEY in Render, then use 'Refresh data from xKDR' above.")
         st.stop()
     options = cities.name.tolist()
     selected = st.sidebar.multiselect("Cities", options, default=options)
