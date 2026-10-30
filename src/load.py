@@ -3,6 +3,11 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
 def engine(url):
+    # Render provides postgresql:// URLs; pin the driver to the installed psycopg2.
+    if url.startswith("postgres://"):
+        url = "postgresql+psycopg2://" + url[len("postgres://"):]
+    elif url.startswith("postgresql://"):
+        url = "postgresql+psycopg2://" + url[len("postgresql://"):]
     return create_engine(url, pool_pre_ping=True)
 
 def initialize(db):

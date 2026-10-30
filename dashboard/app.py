@@ -31,7 +31,12 @@ if st.button("Refresh data from xKDR", type="primary"):
 
 @st.cache_data(ttl=120)
 def query(sql):
-    db = create_engine(os.getenv("DATABASE_URL", "postgresql+psycopg2://airquality:airquality@localhost:5432/airquality"))
+    database_url = os.getenv("DATABASE_URL", "postgresql+psycopg2://airquality:airquality@localhost:5432/airquality")
+    if database_url.startswith("postgres://"):
+        database_url = "postgresql+psycopg2://" + database_url[len("postgres://"):]
+    elif database_url.startswith("postgresql://"):
+        database_url = "postgresql+psycopg2://" + database_url[len("postgresql://"):]
+    db = create_engine(database_url)
     with db.connect() as conn:
         return pd.read_sql(text(sql), conn)
 
