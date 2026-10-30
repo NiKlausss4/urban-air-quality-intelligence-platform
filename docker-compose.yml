@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: airquality
+      POSTGRES_USER: airquality
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airquality}
+    volumes: ["pgdata:/var/lib/postgresql/data", "./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airquality"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  airflow:
+    build: .
+    command: bash -c "airflow db migrate && (airflow users create --username airflow --password airflow --firstname Local --lastname Admin --role Admin --email admin@example.com || true) && (airflow scheduler &) && exec airflow webserver"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /app/airflow/dags
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////tmp/airflow.db
+      AIRFLOW__WEBSERVER__SECRET_KEY: local-development-only
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql+psycopg2://airquality:${POSTGRES_PASSWORD:-airquality}@postgres:5432/airquality
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airquality}
+      PGHOST: postgres
+      PGUSER: airquality
+      PGPORT: "5432"
+      PGDATABASE: airquality
+      XKDR_API_KEY: ${XKDR_API_KEY:-}
+      CITIES: ${CITIES:-Bengaluru,Delhi,Mumbai}
+      LOOKBACK_HOURS: ${LOOKBACK_HOURS:-168}
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: {condition: service_healthy}
+  dashboard:
+    build: .
+    command: streamlit run dashboard/app.py --server.address=0.0.0.0
+    environment:
+      DATABASE_URL: postgresql+psycopg2://airquality:${POSTGRES_PASSWORD:-airquality}@postgres:5432/airquality
+    ports: ["8501:8501"]
+    depends_on:
+      postgres: {condition: service_healthy}
+volumes:
+  pgdata:

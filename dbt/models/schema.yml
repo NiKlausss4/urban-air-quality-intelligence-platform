@@ -1,0 +1,20 @@
+version: 2
+sources:
+  - name: warehouse
+    schema: public
+    tables:
+      - name: fact_air_quality
+      - name: fact_weather
+      - name: dim_city
+      - name: dim_station
+      - name: dim_pollutant
+      - name: raw_api_response
+models:
+  - name: hourly_city_pollution
+    columns:
+      - name: city
+        tests: [not_null]
+      - name: hour_utc
+        tests: [not_null]
+      - name: observation_count
+        tests: [not_null]

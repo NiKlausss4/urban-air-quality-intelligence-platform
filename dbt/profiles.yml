@@ -1,0 +1,12 @@
+urban_air_quality:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('PGHOST', 'postgres') }}"
+      user: "{{ env_var('PGUSER', 'airquality') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'airquality') }}"
+      port: "{{ env_var('PGPORT', '5432') | int }}"
+      dbname: "{{ env_var('PGDATABASE', 'airquality') }}"
+      schema: analytics
+      threads: 4
